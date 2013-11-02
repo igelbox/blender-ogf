@@ -54,11 +54,13 @@ def load_ogf4_m05(ogr):
     if (vf != 0x12071980):
         raise Exception('expected vertex format {:#x}, but found: {:#x}'.format(0x12071980, vf))
     vv = []
+    nn = []
     #~ print('vf:{:#x}, vc:{}'.format(vf, vc))
     for _ in range(vc):
         v = c.unpack('=fff')
         vv.append(v)
         n = c.unpack('=fff')
+        nn.append(n)
         c.unpack('=fff')#tangen
         c.unpack('=fff')#binorm
         t = c.unpack('=ff')
@@ -70,7 +72,7 @@ def load_ogf4_m05(ogr):
     for _ in range(ic//3):
         ii.append(c.unpack('=HHH'))
     #~ print('{},[],{}'.format(vv, ii))
-    return (vv, ii)
+    return (vv, ii, nn)
 def load_ogf4_m10(ogr):
     c = rawr(cfrs(next(ogr), Chunks.OGF4_S_DESC))
     src = c.unpack_asciiz()
@@ -107,4 +109,4 @@ def load(fname):
     with io.open(fname, mode = 'rb') as f:
         return load_ogf(f.read())
 if __name__ == '__main__':
-    load('test.ogf')
+    print(load('test.ogf'))

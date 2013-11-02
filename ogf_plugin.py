@@ -20,16 +20,25 @@ class OgfImporter(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     # Properties used by the file browser
-    filepath = StringProperty(name='File path', description='File filepath used for importing the SMD/VTA/DMX/QC file', maxlen=1024, default='')
+    filepath = StringProperty(name='File path', description='File filepath used for importing the OGF file', maxlen=1024, default='')
     filter_folder = BoolProperty(name='Filter folders', description='', default=True, options={'HIDDEN'})
     filter_glob = StringProperty(default='*.ogf', options={'HIDDEN'})
 
-    def execute(self, context):		
+    remesh = BoolProperty(
+            name='remesh (very slow!)',
+            description='divide polygons into smooth groups',
+            default=False,
+            )
+    def execute(self, context):
         filepath_lc = self.properties.filepath.lower()
         if filepath_lc.endswith('.ogf'):
             import ogf_import
             objname = os.path.basename(filepath_lc)
-            for i in ogf_import.load(self.properties.filepath):
+            meshes = ogf_import.load(self.properties.filepath)
+            if (self.properties.remesh):
+                import ogf_remesh
+                meshes = ogf_remesh.remesh(meshes)
+            for i in meshes:
                 me = bpy.data.meshes.new("mesh")
                 ob = bpy.data.objects.new(objname, me)
                 bpy.context.scene.objects.link(ob)
