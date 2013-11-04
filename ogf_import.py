@@ -51,7 +51,7 @@ def load_ogf4_m05(ogr):
     #~ print ('texture:{}, shader:{}'.format(tex, shd));
     c = rawr(cfrs(next(ogr), Chunks.OGF4_VERTICES))
     vf, vc = c.unpack('=II')
-    vv = []; nn = []
+    vv = []; nn = []; tt = []
     if (vf == 0x12071980):#OGF4_VERTEXFORMAT_FVF_1L
         for _ in range(vc):
             v = c.unpack('=fff')
@@ -60,7 +60,7 @@ def load_ogf4_m05(ogr):
             nn.append(n)
             c.unpack('=fff')#tangen
             c.unpack('=fff')#binorm
-            t = c.unpack('=ff')
+            tt.append(c.unpack('=ff'))
             f = c.unpack('=I')[0]
     elif (vf == 0x240e3300):#OGF4_VERTEXFORMAT_FVF_2L
         for _ in range(vc):
@@ -70,7 +70,7 @@ def load_ogf4_m05(ogr):
             c.unpack('=fff')#tangen
             c.unpack('=fff')#binorm
             c.unpack('=f')
-            t = c.unpack('=ff')
+            tt.append(c.unpack('=ff'))
     else:
         raise Exception('unexpected vertex format: {:#x}'.format(vf))
     #~ print('vf:{:#x}, vc:{}'.format(vf, vc))
@@ -80,7 +80,7 @@ def load_ogf4_m05(ogr):
     for _ in range(ic//3):
         ii.append(c.unpack('=HHH'))
     #~ print('{},[],{}'.format(vv, ii))
-    return (vv, ii, nn)
+    return (vv, ii, nn, tt, tex)
 def load_ogf4_m10(ogr):
     c = rawr(cfrs(next(ogr), Chunks.OGF4_S_DESC))
     src = c.unpack_asciiz()

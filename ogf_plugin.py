@@ -11,6 +11,8 @@ bl_info = {
     'warning':  'Under construction!'
 }
 
+GAMEDATA = '/home/igel/.wine/drive_c/ST/NS/gamedata'
+
 import os.path
 import bpy
 from bpy.props import *
@@ -44,7 +46,25 @@ class OgfImporter(bpy.types.Operator):
                 me = bpy.data.meshes.new("mesh")
                 ob = bpy.data.objects.new(objname, me)
                 bpy.context.scene.objects.link(ob)
-                me.from_pydata(i[0],[],i[1])
+                vv, ff, nn, tt, tx = i
+                me.from_pydata(vv,[],ff)
+                if (tt):
+                    me.uv_textures.new(name='UV')
+                    uvl = me.uv_layers.active.data
+                    for p in me.polygons:
+                        for i in range(p.loop_start, p.loop_start + p.loop_total):
+                            uv = tt[me.loops[i].vertex_index];
+                            uvl[i].uv = (uv[0], 1-uv[1])
+                if (tx != None):
+                    tx = tx.lower().replace('/', os.path.sep).replace('\\', os.path.sep)
+                    tex = bpy.data.textures.new('diffuse', type='IMAGE')
+                    tex.image = bpy.data.images.load('{}/textures/{}.dds'.format(GAMEDATA, tx))
+                    mat = bpy.data.materials.new(objname)
+                    mtex = mat.texture_slots.add()
+                    mtex.texture = tex
+                    mtex.texture_coords = 'UV'
+                    mtex.use_map_color_diffuse = True
+                    me.materials.append(mat)
         else:
             if len(filepath_lc) == 0:
                 self.report({'ERROR'},'No file selected')
