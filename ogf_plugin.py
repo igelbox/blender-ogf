@@ -6,6 +6,8 @@ bl_info = {
     'category': 'Import-Export',
     'location': 'File > Import/Export',
     'description': 'Import STALKER OGF files',
+    'wiki_url': 'https://github.com/igelbox/blender-ogf',
+    'tracker_url': 'https://github.com/igelbox/blender-ogf/issues',
     'warning':  'Under construction!'
 }
 
