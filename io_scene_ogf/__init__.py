@@ -36,11 +36,11 @@ class OgfImporter(bpy.types.Operator):
     def execute(self, context):
         filepath_lc = self.properties.filepath.lower()
         if filepath_lc.endswith('.ogf'):
-            import ogf_import
+            from . import ogf_import
             objname = os.path.basename(filepath_lc)
             meshes = ogf_import.load(self.properties.filepath)
             if (self.properties.remesh):
-                import ogf_remesh
+                from . import ogf_remesh
                 meshes = ogf_remesh.remesh(meshes)
             for i in meshes:
                 me = bpy.data.meshes.new("mesh")
