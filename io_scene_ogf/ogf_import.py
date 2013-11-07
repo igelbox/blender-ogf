@@ -1,45 +1,7 @@
 #! /usr/bin/python
 
-import io, struct
-
-class Chunks:
-    OGF_HEADER      = 0x1
-    OGF4_S_DESC     = 0x12
-    OGF4_CHILDREN   = 0x9
-    OGF4_TEXTURE    = 0x2
-    OGF4_VERTICES   = 0x3
-    OGF4_INDICES    = 0x4
-
-class rawr:
-    def __init__(self, data):
-        self.offs = 0
-        self.data = data
-    def read(sz=1):
-        v = data[self.offs:self.offs+sz]
-        self.offs+=sz
-        return v;
-    def unpack(self, fmt):
-        s = struct.calcsize(fmt)
-        self.offs += s
-        return struct.unpack_from(fmt, self.data, self.offs-s)
-    def unpack_asciiz(self):
-        zpos = self.data.find(0, self.offs);
-        if (zpos == -1):
-            zpos = len(self.data);
-        return self.unpack('={}sx'.format(zpos - self.offs))[0].decode('cp1251');
-def ogfr(data):
-    MASK_COMPRESSED = 0x80000000
-    offs = 0
-    while (offs < len(data)):
-        i, s = struct.unpack_from('=II', data, offs);
-        if ((i & MASK_COMPRESSED) != 0):
-            raise Exception('compressed')
-        offs += 8 + s
-        yield (i & ~MASK_COMPRESSED, data[offs-s:offs])
-def cfrs(tupl, expected):
-    if (tupl[0] != expected):
-        raise Exception('expected {}, but found: {}'.format(expected, tupl[0]))
-    return tupl[1]
+import io
+from ogf_utils import *
 
 def load_ogfX(h, ogr):
     raise Exception('unsupported OGF format version: {}'.format(h[0]))
