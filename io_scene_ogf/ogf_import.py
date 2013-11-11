@@ -1,4 +1,5 @@
 from .ogf_utils import *
+
 try:
     import bpy
 except ImportError:
@@ -7,7 +8,8 @@ except ImportError:
 
 class ImportContext:
     def __init__(self, file_name, remesh=False):
-        self.gamedata = '/home/igel/.wine/drive_c/ST/NS/gamedata'
+        from .settings import GAMEDATA_FOLDER
+        self.gamedata = GAMEDATA_FOLDER
         self.file_name = file_name
         import os.path
         self.object_name = os.path.basename(file_name.lower())
