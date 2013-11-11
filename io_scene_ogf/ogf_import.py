@@ -1,10 +1,4 @@
-#! /usr/bin/python
-
-import io
-try:
-    from .ogf_utils import *
-except SystemError:
-    from ogf_utils import *
+from .ogf_utils import *
 
 
 def load_ogf4_m05(ogr):
@@ -85,9 +79,6 @@ def load_ogf(data):
 
 
 def load(fname):
+    import io
     with io.open(fname, mode='rb') as f:
         return load_ogf(f.read())
-
-
-if __name__ == '__main__':
-    print(load('../test.ogf'))
