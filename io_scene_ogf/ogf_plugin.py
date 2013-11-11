@@ -11,11 +11,7 @@ bl_info = {
     'warning':  'Under construction!'
 }
 
-GAMEDATA = '/home/igel/.wine/drive_c/ST/NS/gamedata'
-
-import os.path
 import bpy
-from bpy.props import *
 
 
 #noinspection PyUnusedLocal
@@ -26,11 +22,14 @@ class OgfImporter(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     # Properties used by the file browser
-    filepath = StringProperty(name='File path', description='File filepath used for importing the OGF file', maxlen=1024, default='')
-    filter_folder = BoolProperty(name='Filter folders', description='', default=True, options={'HIDDEN'})
-    filter_glob = StringProperty(default='*.ogf', options={'HIDDEN'})
+    filepath = bpy.props.StringProperty(
+        name='File path', description='File filepath used for importing the OGF file',
+        maxlen=1024, default=''
+    )
+    filter_folder = bpy.props.BoolProperty(name='Filter folders', description='', default=True, options={'HIDDEN'})
+    filter_glob = bpy.props.StringProperty(default='*.ogf', options={'HIDDEN'})
 
-    remesh = BoolProperty(
+    remesh = bpy.props.BoolProperty(
         name='remesh (very slow!)',
         description='divide polygons into smooth groups',
         default=False,
@@ -39,40 +38,16 @@ class OgfImporter(bpy.types.Operator):
     def execute(self, context):
         filepath_lc = self.properties.filepath.lower()
         if filepath_lc.endswith('.ogf'):
-            from . import ogf_import
-            objname = os.path.basename(filepath_lc)
-            meshes = ogf_import.load(self.properties.filepath)
-            if self.properties.remesh:
-                from . import ogf_remesh
-                meshes = ogf_remesh.remesh(meshes)
-            for i in meshes:
-                me = bpy.data.meshes.new("mesh")
-                ob = bpy.data.objects.new(objname, me)
-                bpy.context.scene.objects.link(ob)
-                vv, ff, nn, tt, tx = i
-                me.from_pydata(vv, [], ff)
-                if tt:
-                    me.uv_textures.new(name='UV')
-                    uvl = me.uv_layers.active.data
-                    for p in me.polygons:
-                        for i in range(p.loop_start, p.loop_start + p.loop_total):
-                            uv = tt[me.loops[i].vertex_index]
-                            uvl[i].uv = (uv[0], 1-uv[1])
-                if tx:
-                    tx = tx.lower().replace('/', os.path.sep).replace('\\', os.path.sep)
-                    tex = bpy.data.textures.new('diffuse', type='IMAGE')
-                    tex.image = bpy.data.images.load('{}/textures/{}.dds'.format(GAMEDATA, tx))
-                    mat = bpy.data.materials.new(objname)
-                    mtex = mat.texture_slots.add()
-                    mtex.texture = tex
-                    mtex.texture_coords = 'UV'
-                    mtex.use_map_color_diffuse = True
-                    me.materials.append(mat)
+            from .ogf_import import load, ImportContext
+            load(ImportContext(
+                file_name=self.properties.filepath,
+                remesh=self.properties.remesh
+            ))
         else:
             if len(filepath_lc) == 0:
                 self.report({'ERROR'}, 'No file selected')
             else:
-                self.report({'ERROR'}, 'Format of {} not recognised'.format(os.path.basename(self.properties.filepath)))
+                self.report({'ERROR'}, 'Format of {} not recognised'.format(self.properties.filepath))
             return {'CANCELLED'}
         return {'FINISHED'}
 

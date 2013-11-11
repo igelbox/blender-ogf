@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from io_scene_ogf import ogf_import
+from io_scene_ogf.ogf_import import load, ImportContext
 
 
-ogf_import.load('test.ogf')
+load(ImportContext('test.ogf'))
