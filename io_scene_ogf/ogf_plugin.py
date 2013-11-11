@@ -18,6 +18,7 @@ import bpy
 from bpy.props import *
 
 
+#noinspection PyUnusedLocal
 class OgfImporter(bpy.types.Operator):
     bl_idname = 'import_scene.ogf'
     bl_label = 'Import OGF'
@@ -49,7 +50,7 @@ class OgfImporter(bpy.types.Operator):
                 ob = bpy.data.objects.new(objname, me)
                 bpy.context.scene.objects.link(ob)
                 vv, ff, nn, tt, tx = i
-                me.from_pydata(vv,[],ff)
+                me.from_pydata(vv, [], ff)
                 if tt:
                     me.uv_textures.new(name='UV')
                     uvl = me.uv_layers.active.data
@@ -81,6 +82,7 @@ class OgfImporter(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 
+#noinspection PyUnusedLocal
 def menu_func_import(self, context):
     self.layout.operator(OgfImporter.bl_idname, text='STALKER OGF (.ogf)')
 

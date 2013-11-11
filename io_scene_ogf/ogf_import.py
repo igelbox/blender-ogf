@@ -4,8 +4,7 @@ from .ogf_utils import *
 def load_ogf4_m05(ogr):
     c = rawr(cfrs(next(ogr), Chunks.OGF4_TEXTURE))
     tex = c.unpack_asciiz()
-    shd = c.unpack_asciiz()
-    #~ print ('texture:{}, shader:{}'.format(tex, shd));
+    c.unpack_asciiz()  # shader
     c = rawr(cfrs(next(ogr), Chunks.OGF4_VERTICES))
     vf, vc = c.unpack('=II')
     vv, nn, tt = [], [], []
@@ -18,10 +17,10 @@ def load_ogf4_m05(ogr):
             c.unpack('=fff')  # tangen
             c.unpack('=fff')  # binorm
             tt.append(c.unpack('=ff'))
-            f = c.unpack('=I')[0]
+            c.unpack('=I')
     elif vf == 0x240e3300:  # OGF4_VERTEXFORMAT_FVF_2L
         for _ in range(vc):
-            bb = c.unpack('=HH')
+            c.unpack('=HH')
             vv.append(c.unpack('=fff'))
             nn.append(c.unpack('=fff'))
             c.unpack('=fff')  # tangen
@@ -42,10 +41,10 @@ def load_ogf4_m05(ogr):
 
 def load_ogf4_m10(ogr):
     c = rawr(cfrs(next(ogr), Chunks.OGF4_S_DESC))
-    src = c.unpack_asciiz()
+    c.unpack_asciiz()  # src
     #~ print ('source:{}'.format(src));
-    exptool = c.unpack_asciiz()
-    exptime, crttime, modtime = c.unpack('=III')
+    c.unpack_asciiz()  # exptool
+    c.unpack('=III')  # exptime, crttime, modtime
     result = []
     for i, c in ogfr(cfrs(next(ogr), Chunks.OGF4_CHILDREN)):
         result.append(load_ogf(c))
@@ -55,10 +54,8 @@ def load_ogf4_m10(ogr):
 def load_ogf4(h, ogr):
     mt, shid = h.unpack('=BH')
     print('modeltype:{}, shaderid:{}'.format(mt, shid))
-    bbox = h.unpack('=ffffff')
-    #~ print ('bbox:{}'.format(bbox))
-    bsphere = h.unpack('=ffff')
-    #~ print ('bsphere:{}'.format(bsphere))
+    h.unpack('=ffffff')  # bounding box
+    h.unpack('=ffff')  # bounding sphere
     return {
         5: load_ogf4_m05,
         10: load_ogf4_m10
@@ -71,7 +68,8 @@ def load_ogf(data):
     ver = cr.unpack('=B')[0]
     #~ print ('version:{}'.format(ver))
 
-    def unsupported(h, ogr):
+    #noinspection PyUnusedLocal
+    def unsupported(h, _):
         raise Exception('unsupported OGF format version: {}'.format(ver))
     return {
         4: load_ogf4
