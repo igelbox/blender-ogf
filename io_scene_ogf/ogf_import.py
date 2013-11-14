@@ -114,10 +114,14 @@ def load_ogf4(h, ogr, context, parent):
     print('modeltype:{}, shaderid:{}'.format(mt, shid))
     h.unpack('=ffffff')  # bounding box
     h.unpack('=ffff')  # bounding sphere
+
+    #noinspection PyUnusedLocal
+    def unsupported(r, c, p):
+        raise Exception('unsupported OGF model type: {}'.format(mt))
     return {
         5: load_ogf4_m05,
         10: load_ogf4_m10
-    }.get(mt)(ogr, context, parent)
+    }.get(mt, unsupported)(ogr, context, parent)
 
 
 def load_ogf(data, context, parent=None):
