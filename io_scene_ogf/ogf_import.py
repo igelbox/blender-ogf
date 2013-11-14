@@ -32,6 +32,22 @@ class ImportContext:
         return result
 
 
+def load_ogf4_m03(ogr, context, parent):
+    load_ogf4_m10(ogr, context, parent)
+
+
+def load_ogf4_m04(ogr, context, parent):
+    load_ogf4_m05(ogr, context, parent)
+    c = rawr(cfrs(next(ogr), 0x6))  # OGF4_SWIDATA
+    c.unpack('=IIII')
+    sw_count = c.unpack('=I')[0]
+    print(sw_count)
+    for _ in range(sw_count):
+        offset, num_tris, num_verts = c.unpack('=IHH')
+        print(offset, num_tris, num_verts)
+        break
+
+
 def load_ogf4_m05(ogr, context, parent):
     c = rawr(cfrs(next(ogr), Chunks.OGF4_TEXTURE))
     teximage = c.unpack_asciiz()
@@ -119,6 +135,8 @@ def load_ogf4(h, ogr, context, parent):
     def unsupported(r, c, p):
         raise Exception('unsupported OGF model type: {}'.format(mt))
     return {
+        3: load_ogf4_m03,
+        4: load_ogf4_m04,
         5: load_ogf4_m05,
         10: load_ogf4_m10
     }.get(mt, unsupported)(ogr, context, parent)
