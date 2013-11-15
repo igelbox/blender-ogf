@@ -37,7 +37,7 @@ def load_ogf4_m03(ogr, context, parent):
 
 
 def load_ogf4_m04(ogr, context, parent):
-    load_ogf4_m05(ogr, context, parent)
+    vv, ii, tt, teximage = load_ogf4_m05_(ogr)
     c = rawr(cfrs(next(ogr), 0x6))  # OGF4_SWIDATA
     c.unpack('=IIII')
     sw_count = c.unpack('=I')[0]
@@ -45,10 +45,11 @@ def load_ogf4_m04(ogr, context, parent):
     for _ in range(sw_count):
         offset, num_tris, num_verts = c.unpack('=IHH')
         print(offset, num_tris, num_verts)
+        render_model(context, parent, vv, ii[offset//3:], tt, teximage)  # load only first LOD
         break
 
 
-def load_ogf4_m05(ogr, context, parent):
+def load_ogf4_m05_(ogr):
     c = rawr(cfrs(next(ogr), Chunks.OGF4_TEXTURE))
     teximage = c.unpack_asciiz()
     c.unpack_asciiz()  # shader
@@ -83,6 +84,15 @@ def load_ogf4_m05(ogr, context, parent):
     for _ in range(ic // 3):
         ii.append(c.unpack('=HHH'))
         #~ print('{},[],{}'.format(vv, ii))
+    return vv, ii, tt, teximage
+
+
+def load_ogf4_m05(ogr, context, parent):
+    vv, ii, tt, teximage = load_ogf4_m05_(ogr)
+    render_model(context, parent, vv, ii, tt, teximage)
+
+
+def render_model(context, parent, vv, ii, tt, teximage):
     if bpy:
         # mesh
         bpy_mesh = bpy.data.meshes.new('mesh')
