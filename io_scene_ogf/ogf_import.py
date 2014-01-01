@@ -119,20 +119,108 @@ def render_model(context, parent, vv, ii, tt, teximage):
 
 
 def load_ogf4_m10(ogr, context, parent):
-    c = rawr(cfrs(next(ogr), Chunks.OGF4_S_DESC))
-    c.unpack_asciiz()  # src
-    #~ print ('source:{}'.format(src));
-    c.unpack_asciiz()  # exptool
-    c.unpack('=III')  # exptime, crttime, modtime
+    def robb(r):
+        return (
+            r.unpack('=fffffffff'),  # obb.rotate
+            r.unpack('=fff'),   # obb.translate
+            r.unpack('=fff')    # obb.halfsize
+        )
+    bones = []
+    bonemat = {}
+    for cid, cdata in ogr:
+        if cid == 0x12:     # OGF4_S_DESC
+            c = rawr(cdata)
+            c.unpack_asciiz()   # src
+            c.unpack_asciiz()   # exptool
+            c.unpack('=III')    # exptime, crttime, modtime
+        elif cid == 0x02:   # OGF4_TEXTURE
+            c = rawr(cdata)
+            c.unpack_asciiz()   # texture
+            c.unpack_asciiz()   # shader
+        elif cid == 0x0A:   # OGF4_CHILDREN_L
+            c = rawr(cdata)
+            count = c.unpack('=I')
+            for _ in range(count):
+                c.unpack('=I')
+        elif cid == 0x09:   # OGF4_CHILDREN
+            if bpy:
+                bpy_object = bpy.data.objects.new(context.object_name, None)
+                bpy_object.parent = parent
+                import math
+                bpy_object.rotation_euler.x = math.pi/2
+                bpy.context.scene.objects.link(bpy_object)
+                parent = bpy_object
+            for i, c in ogfr(cdata):
+                load_ogf(c, context, parent)
+        elif cid == 0x11:   # OGF4_S_USERDATA
+            c = rawr(cdata)
+            userdata = c.unpack_asciiz()
+            print('userdata:{}'.format(userdata))
+        #elif cid == 0x17:   # OGF4_S_LODS
+        elif cid == 0x0D:   # OGF4_S_BONE_NAMES
+            c = rawr(cdata)
+            count = c.unpack('=I')[0]
+            for _ in range(count):
+                bone = (
+                    c.unpack_asciiz(),  # name
+                    c.unpack_asciiz(),  # parent
+                    robb(c)
+                )
+                bones.append(bone)
+        elif cid == 0x10:   # OGF4_S_IKDATA
+            c = rawr(cdata)
+            for bone in bones:
+                version = c.unpack('=I')[0]
+                if version != 0x1:  # OGF4_S_JOINT_IK_DATA_VERSION
+                    raise Exception('unexpected ikdata version: {:#x}'.format(version))
+                c.unpack_asciiz()   # gamemtl
+                c.unpack('=HH')     # shape_type, shape_flags
+                robb(c)             # shape_obb
+                (c.unpack('=fff'), c.unpack('=f')[0])   # shape_sphere
+                (c.unpack('=fff'), c.unpack('=fff'), c.unpack('=f')[0], c.unpack('=f')[0])  # shape_cylinder
+                c.unpack('=I')      # jik_type
+
+                def rjiklim(r):
+                    return (
+                        r.unpack('=ff'),
+                        r.unpack('=f')[0],
+                        r.unpack('=f')[0]
+                    )
+                (rjiklim(c), rjiklim(c), rjiklim(c))    # jik_lims
+                c.unpack('=ffIfff') # jik_spr, jik_dmp, jik_flags, jik_bf, jik_bt, jik_fri
+                rot = c.unpack('=fff')
+                ofs = c.unpack('=fff')
+                c.unpack('=f')      # mass
+                c.unpack('=fff')    # center of mass
+                bonemat[bone[0]] = (rot, ofs)
+        else:
+            print('unknown chunk={:#x}'.format(cid))
     if bpy:
-        bpy_object = bpy.data.objects.new(context.object_name, None)
-        bpy_object.parent = parent
-        import math
-        bpy_object.rotation_euler.x = math.pi/2
-        bpy.context.scene.objects.link(bpy_object)
-        parent = bpy_object
-    for i, c in ogfr(cfrs(next(ogr), Chunks.OGF4_CHILDREN)):
-        load_ogf(c, context, parent)
+        import mathutils
+        bpy_armature = bpy.data.armatures.new(context.object_name)
+        bpy_armature_obj = bpy.data.objects.new(context.object_name, bpy_armature)
+        bpy.context.scene.objects.link(bpy_armature_obj)
+        bpy.context.scene.objects.active = bpy_armature_obj
+        matrices = {}
+        bpy.ops.object.mode_set(mode='EDIT')
+        try:
+            for bone in bones:
+                name, parent, _ = bone
+                bm = bonemat[name]
+                print(name, parent, bm)
+                mat = mathutils.Matrix.Translation(bm[1]) * mathutils.Euler(bm[0], 'XYZ').to_matrix().to_4x4()
+                pm = matrices.get(parent, mathutils.Matrix.Identity(4))
+                mat = pm * mat
+                matrices[name] = mat
+                print(mat)
+                bpy_bone = bpy_armature.edit_bones.new(name)
+                if parent:
+                    bpy_bone.parent = bpy_armature.edit_bones[parent]
+                    bpy_bone.head = bpy_bone.parent.tail
+                tp = mat * mathutils.Vector()
+                bpy_bone.tail = tp
+        finally:
+            bpy.ops.object.mode_set(mode='OBJECT')
 
 
 def load_ogf4(h, ogr, context, parent):
