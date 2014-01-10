@@ -199,6 +199,7 @@ def load_ogf4_m10(ogr, context, parent):
         import mathutils
         bpy_armature = bpy.data.armatures.new(context.object_name)
         bpy_armature_obj = bpy.data.objects.new(context.object_name, bpy_armature)
+        bpy_armature_obj.parent = parent
         bpy.context.scene.objects.link(bpy_armature_obj)
         bpy.context.scene.objects.active = bpy_armature_obj
         matrices = {}
@@ -208,16 +209,18 @@ def load_ogf4_m10(ogr, context, parent):
                 name, parent, _ = bone
                 bm = bonemat[name]
                 print(name, parent, bm)
-                mat = mathutils.Matrix.Translation(bm[1]) * mathutils.Euler(bm[0], 'XYZ').to_matrix().to_4x4()
+                mat = mathutils.Matrix.Translation(bm[1]) * mathutils.Euler(bm[0], 'ZXY').to_matrix().to_4x4()
                 pm = matrices.get(parent, mathutils.Matrix.Identity(4))
                 mat = pm * mat
                 matrices[name] = mat
                 print(mat)
                 bpy_bone = bpy_armature.edit_bones.new(name)
+                tp = mat * mathutils.Vector()
                 if parent:
                     bpy_bone.parent = bpy_armature.edit_bones[parent]
                     bpy_bone.head = bpy_bone.parent.tail
-                tp = mat * mathutils.Vector()
+                else:
+                    bpy_bone.head = tp
                 bpy_bone.tail = tp
         finally:
             bpy.ops.object.mode_set(mode='OBJECT')
