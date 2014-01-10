@@ -178,7 +178,7 @@ def load_ogf4_m10(ogr, context, parent):
                 robb(c)             # shape_obb
                 (c.unpack('=fff'), c.unpack('=f')[0])   # shape_sphere
                 (c.unpack('=fff'), c.unpack('=fff'), c.unpack('=f')[0], c.unpack('=f')[0])  # shape_cylinder
-                c.unpack('=I')      # jik_type
+                jik_type = c.unpack('=I')[0]
 
                 def rjiklim(r):
                     return (
@@ -186,13 +186,13 @@ def load_ogf4_m10(ogr, context, parent):
                         r.unpack('=f')[0],
                         r.unpack('=f')[0]
                     )
-                (rjiklim(c), rjiklim(c), rjiklim(c))    # jik_lims
+                jik_lims = (rjiklim(c), rjiklim(c), rjiklim(c))
                 c.unpack('=ffIfff') # jik_spr, jik_dmp, jik_flags, jik_bf, jik_bt, jik_fri
                 rot = c.unpack('=fff')
                 ofs = c.unpack('=fff')
                 c.unpack('=f')      # mass
                 c.unpack('=fff')    # center of mass
-                bonemat[bone[0]] = (rot, ofs)
+                bonemat[bone[0]] = (rot, ofs, (jik_type, jik_lims))
         else:
             print('unknown chunk={:#x}'.format(cid))
     if bpy:
@@ -203,25 +203,40 @@ def load_ogf4_m10(ogr, context, parent):
         bpy.context.scene.objects.link(bpy_armature_obj)
         bpy.context.scene.objects.active = bpy_armature_obj
         matrices = {}
-        bpy.ops.object.mode_set(mode='EDIT')
         try:
+            bpy.ops.object.mode_set(mode='EDIT')
             for bone in bones:
                 name, parent, _ = bone
                 bm = bonemat[name]
-                print(name, parent, bm)
                 mat = mathutils.Matrix.Translation(bm[1]) * mathutils.Euler(bm[0], 'ZXY').to_matrix().to_4x4()
                 pm = matrices.get(parent, mathutils.Matrix.Identity(4))
                 mat = pm * mat
                 matrices[name] = mat
-                print(mat)
                 bpy_bone = bpy_armature.edit_bones.new(name)
                 tp = mat * mathutils.Vector()
                 if parent:
                     bpy_bone.parent = bpy_armature.edit_bones[parent]
                     bpy_bone.head = bpy_bone.parent.tail
                 else:
-                    bpy_bone.head = tp
+                    bpy_bone.head = tp - mathutils.Vector((0, -0.1, 0))
                 bpy_bone.tail = tp
+            bpy.ops.object.mode_set(mode='POSE')
+            for bone in bones:
+                name = bone[0]
+                bpy_bone = bpy_armature_obj.pose.bones[name]
+                bpy_constraint = bpy_bone.constraints.new('LIMIT_ROTATION')
+                bpy_constraint.owner_space = 'LOCAL'
+                jt, jl = bonemat[name][2]
+                bpy_constraint.use_limit_z = True
+                bpy_constraint.use_limit_x = True
+                bpy_constraint.use_limit_y = True
+                if jt != 0:   # 0=rigid
+                    bpy_constraint.min_x = -jl[0][0][1]
+                    bpy_constraint.max_x = -jl[0][0][0]
+                    bpy_constraint.min_y = -jl[1][0][1]
+                    bpy_constraint.max_y = -jl[1][0][0]
+                    bpy_constraint.min_z = -jl[2][0][1]
+                    bpy_constraint.max_z = -jl[2][0][0]
         finally:
             bpy.ops.object.mode_set(mode='OBJECT')
 
