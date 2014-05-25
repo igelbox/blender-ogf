@@ -42,3 +42,21 @@ def cfrs(tupl, expected):
     if tupl[0] != expected:
         raise Exception('expected {}, but found: {}'.format(expected, tupl[0]))
     return tupl[1]
+
+
+class raww:
+    def __init__(self):
+        self.data = bytearray()
+
+    def pack(self, fmt, *arg):
+        self.data += struct.pack(fmt, *arg)
+
+
+class ogfw:
+    def __init__(self, fout):
+        self.__fout = fout
+
+    def next(self, tag, rw):
+        data = rw.data
+        self.__fout(struct.pack('=II', tag, len(data)))
+        self.__fout(data)
