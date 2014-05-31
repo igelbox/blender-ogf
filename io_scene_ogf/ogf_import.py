@@ -98,7 +98,7 @@ def render_model(context, parent, vv, ii, tt, teximage):
         bpy_mesh = bpy.data.meshes.new('mesh')
         bpy_mesh.from_pydata(vv, [], ii)
         # uv-map
-        bpy_mesh.uv_textures.new(name='UV')
+        uvt = bpy_mesh.uv_textures.new(name='UV')
         uvl = bpy_mesh.uv_layers.active.data
         for p in bpy_mesh.polygons:
             for i in range(p.loop_start, p.loop_start + p.loop_total):
@@ -109,6 +109,9 @@ def render_model(context, parent, vv, ii, tt, teximage):
             bpy_material = bpy.data.materials.new(context.object_name)
             bpy_texture = bpy_material.texture_slots.add()
             bpy_texture.texture = context.texture(teximage)
+            img = bpy_texture.texture.image
+            for f in uvt.data.values():
+                f.image = img
             bpy_texture.texture_coords = 'UV'
             bpy_texture.use_map_color_diffuse = True
             bpy_mesh.materials.append(bpy_material)
