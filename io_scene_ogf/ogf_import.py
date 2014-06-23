@@ -56,7 +56,7 @@ def load_ogf4_m05_(ogr):
     c = rawr(cfrs(next(ogr), Chunks.OGF4_VERTICES))
     vertex_format, vertices_count = c.unpack('=II')
     vv, nn, tt = [], [], []
-    if vertex_format == 0x12071980:  # OGF4_VERTEXFORMAT_FVF_1L
+    if vertex_format == 0x12071980 or vertex_format == 0x1:  # OGF4_VERTEXFORMAT_FVF_1L or OGF4_VERTEXFORMAT_FVF_1L_CS
         for _ in range(vertices_count):
             v = c.unpack('=fff')
             vv.append(v)
@@ -66,7 +66,7 @@ def load_ogf4_m05_(ogr):
             c.unpack('=fff')  # binorm
             tt.append(c.unpack('=ff'))
             c.unpack('=I')
-    elif vertex_format == 0x240e3300:  # OGF4_VERTEXFORMAT_FVF_2L
+    elif vertex_format == 0x240e3300 or vertex_format == 0x2:  # OGF4_VERTEXFORMAT_FVF_2L or OGF4_VERTEXFORMAT_FVF_2L_CS
         for _ in range(vertices_count):
             c.unpack('=HH')
             vv.append(c.unpack('=fff'))
